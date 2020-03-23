@@ -12,11 +12,13 @@ eckey by java, support sm2/k1
     String message = "Hello World!";
     // use sha256 to hash the message
     String sigStr = sm2key.sign(message);
+    // use sha256 to hash the bytes
+    // String sigStr = sm2key.sign(message.getBytes());
     System.out.println(sigStr);
 
     // verify the sigStr is signed by key 
     try {
-        sm2key.verifyMessage(message, sigStr);
+        sm2key.verifyMessage(message.getBytes(), sigStr);
     } catch (SignatureException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
@@ -24,7 +26,7 @@ eckey by java, support sm2/k1
 
     // recover the publicKey by sigStr and message 
     try {
-        String recoverKey = ECKey.signedMessageToKey(message, sigStr);
+        String recoverKey = ECKey.signedMessageToKey(message.getBytes(), sigStr);
         System.out.println(recoverKey);
     } catch (SignatureException e) {
         // TODO Auto-generated catch block

@@ -79,15 +79,15 @@ public class ECKey {
         // bugs that make it unsecure.
         if (Utils.isAndroidRuntime())
             new LinuxSecureRandom();
+        // Tell Bouncy Castle to precompute data that's needed during sm2p256v1
+        // calculations.
+        // FixedPointUtil 使用 PRECOMP_NAME 限制预算的曲线只能一条，这里默认预算sm2,
+        FixedPointUtil.precompute(K1_CURVE_PARAMS.getG());
 
         K1_CURVE = new ECDomainParameters(K1_CURVE_PARAMS.getCurve(), K1_CURVE_PARAMS.getG(), K1_CURVE_PARAMS.getN(),
                 K1_CURVE_PARAMS.getH());
         K1_HALF_CURVE_ORDER = K1_CURVE_PARAMS.getN().shiftRight(1);
 
-        // Tell Bouncy Castle to precompute data that's needed during sm2p256v1
-        // calculations.
-        // FixedPointUtil 使用 PRECOMP_NAME 限制预算的曲线只能一条，这里默认预算sm2,
-        FixedPointUtil.precompute(SM2_CURVE_PARAMS.getG());
         SM2_CURVE = new ECDomainParameters(SM2_CURVE_PARAMS.getCurve(), SM2_CURVE_PARAMS.getG(),
                 SM2_CURVE_PARAMS.getN(), SM2_CURVE_PARAMS.getH());
         SM2_HALF_CURVE_ORDER = SM2_CURVE_PARAMS.getN().shiftRight(1);
@@ -295,7 +295,8 @@ public class ECKey {
         return result;
     }
 
-    public String sign(byte[] hash) {
+    public String sign(byte[] data) {
+        byte[] hash = Sha256Hash.hash(data);
         ECDSASignature sig = doSign(hash, priv);
         assert(sig.isCanonical());
         byte recId = findRecoveryId(hash, sig);
@@ -309,17 +310,16 @@ public class ECKey {
     }
 
     public String sign(String message) {
-        byte[] hash = Sha256Hash.hash(message.getBytes());
-        return sign(hash);
+        return sign(message.getBytes());
     }
 
-    public void verifyMessage(String message, String sigStr) throws SignatureException {
-        String publicKey = ECKey.signedMessageToKey(message, sigStr);
+    public void verifyMessage(byte[] data, String sigStr) throws SignatureException {
+        String publicKey = ECKey.signedMessageToKey(data, sigStr);
         if (!publicKey.equals(GetPublic()))
             throw new SignatureException("Signature did not match for message");
     }
 
-    public static String signedMessageToKey(String message, String sigStr) throws SignatureException {
+    public static String signedMessageToKey(byte[] data, String sigStr) throws SignatureException {
         Map<String, Object> key = StringToKey(sigStr);
         String prefix = (String)key.get("prefix");
         if (!prefix.equals("SIG")) {
@@ -338,7 +338,7 @@ public class ECKey {
         BigInteger r = new BigInteger(1, Arrays.copyOfRange(signature, 1, 33));
         BigInteger s = new BigInteger(1, Arrays.copyOfRange(signature, 33, 65));
 
-        byte[] hash = Sha256Hash.hash(message.getBytes());
+        byte[] hash = Sha256Hash.hash(data);
         ECDSASignature sig = new ECDSASignature(r, s, StringToKeyType(type));
         if (header >= 31) {
             header -= 4;
@@ -428,7 +428,7 @@ public class ECKey {
     }
 
     @Nullable
-    public static ECPoint recoverFromSignature(int recId, ECDSASignature sig, byte[] hash) {
+    private static ECPoint recoverFromSignature(int recId, ECDSASignature sig, byte[] hash) {
         Preconditions.checkArgument(recId >= 0, "recId must be positive");
         Preconditions.checkArgument(sig.r.signum() >= 0, "r must be positive");
         Preconditions.checkArgument(sig.s.signum() >= 0, "s must be positive");

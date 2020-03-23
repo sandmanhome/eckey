@@ -19,14 +19,14 @@ public class App {
         System.out.println(sigStr);
 
         try {
-            sm2key.verifyMessage(message, sigStr);
+            sm2key.verifyMessage(message.getBytes(), sigStr);
         } catch (SignatureException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
         try {
-            String recoverKey = ECKey.signedMessageToKey(message, sigStr);
+            String recoverKey = ECKey.signedMessageToKey(message.getBytes(), sigStr);
             System.out.println(recoverKey);
         } catch (SignatureException e) {
             // TODO Auto-generated catch block

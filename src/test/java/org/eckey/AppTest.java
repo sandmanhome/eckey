@@ -12,7 +12,7 @@ import java.security.SignatureException;
 
 public class AppTest {
     @Test
-    public void testAppHasAGreeting() {
+    public void testApp() {
         String priv = "PVT_SM2_Yxo3RKaoUW2hHQt3BJyU2wmQjjJ1ADatxCo3LxwBK9LSyH3sX";
         String pub = "PUB_SM2_7VZMGC13BBjvN8PJx7CdQK3fFg9ZWtjMBrTx3h8hL3faaiPfmV";
         String signedStr = "SIG_SM2_HDqVAQzQjYbKsgE8s64adP8V9Vfn9NSvvzSzpvsNNyobLy28CPaeuXpKWGxWsFiv4LvmmRQWa6rmjjNMJ4f83t9yTAoXNG";
@@ -21,14 +21,14 @@ public class AppTest {
         assert (key.GetPublic().equals(pub));
 
         try {
-            key.verifyMessage(msg,signedStr);
+            key.verifyMessage(msg.getBytes(),signedStr);
         } catch (SignatureException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
         try {
-            String recoverKey = ECKey.signedMessageToKey(msg, signedStr);
+            String recoverKey = ECKey.signedMessageToKey(msg.getBytes(), signedStr);
             assert (recoverKey.equals(pub));
         } catch (SignatureException e) {
             // TODO Auto-generated catch block
@@ -47,14 +47,13 @@ public class AppTest {
             String sigStr = sm2key.sign(message);
             System.out.println(sigStr);
 
-            // 对已sha256的byte[]签名
-            byte[] hash = Sha256Hash.hash(message.getBytes());
-            String sigStr1 = sm2key.sign(hash);
+            // 内部对 byte[] 做sha256 hash后签名
+            String sigStr1 = sm2key.sign(message.getBytes());
             System.out.println(sigStr1);
             assert (sigStr.equals(sigStr1));
 
             try {
-                sm2key.verifyMessage(message, sigStr);
+                sm2key.verifyMessage(message.getBytes(), sigStr);
             } catch (SignatureException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -62,7 +61,7 @@ public class AppTest {
 
             String recoverKey = "";
             try {
-                recoverKey = ECKey.signedMessageToKey(message, sigStr);
+                recoverKey = ECKey.signedMessageToKey(message.getBytes(), sigStr);
             } catch (SignatureException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
