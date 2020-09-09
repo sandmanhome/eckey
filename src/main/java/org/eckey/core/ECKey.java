@@ -27,7 +27,7 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.*;
-import org.bouncycastle.crypto.signers.ECDSASigner;
+//import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECPoint;
@@ -73,6 +73,8 @@ public class ECKey {
     public static final BigInteger SM2_HALF_CURVE_ORDER;
 
     private static final SecureRandom secureRandom;
+
+    private static final int MAXNONCE = 100;
 
     static {
         // Init proper random number generator, as some old Android installations have
@@ -351,12 +353,20 @@ public class ECKey {
         return KeyToString("PUB", type, publicKey.getEncoded(true));
     }
 
+    public boolean isCanonical(BigInteger v) {
+        return v.compareTo(GetHALFCURVEORDER(type)) <= 0;
+    }
+    
     protected ECDSASignature doSign(byte[] hash, BigInteger privateKeyForSigning) {
         checkNotNull(privateKeyForSigning);
         ECDSASigner signer = new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest()));
         ECPrivateKeyParameters privKey = new ECPrivateKeyParameters(privateKeyForSigning, CURVE);
         signer.init(true, privKey);
-        BigInteger[] components = signer.generateSignature(hash);
+        BigInteger[] components;
+        int nonce = 0;
+        do {
+            components = signer.generateSignature(hash, nonce++);
+        } while(!isCanonical(components[0]) && nonce < MAXNONCE);
         return new ECDSASignature(components[0], components[1], type).toCanonicalised();
     }
 
