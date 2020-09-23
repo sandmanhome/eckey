@@ -1,39 +1,10 @@
 ## Install
 eckey by java, support sm2/k1
+crypto: sm2/sm3/sm4
 
 ## Usage
 
-```java
-    // newKey, default sm2, new ECKey(ECKey.KeyType.K1) for k1
-    ECKey sm2key = new ECKey();
-    System.out.println(sm2key.GetPrivate());
-    System.out.println(sm2key.GetPublic());
-
-    String message = "Hello World!";
-    // use sha256 to hash the message
-    String sigStr = sm2key.sign(message);
-    // use sha256 to hash the bytes
-    // String sigStr = sm2key.sign(message.getBytes());
-    System.out.println(sigStr);
-
-    // verify the sigStr is signed by key 
-    try {
-        sm2key.verifyMessage(message.getBytes(), sigStr);
-    } catch (SignatureException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-    }
-
-    // recover the publicKey by sigStr and message 
-    try {
-        String recoverKey = ECKey.signedMessageToKey(message.getBytes(), sigStr);
-        System.out.println(recoverKey);
-    } catch (SignatureException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-    }
-
-```
+see src/test/java/org/eckey
 
 #### LICENSE
 
